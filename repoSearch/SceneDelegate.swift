@@ -14,7 +14,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
-        let navigationCotnroller = UINavigationController(rootViewController: ViewController())
+        let navigationCotnroller = UINavigationController(rootViewController: SearchViewController())
         navigationBarConfiguration(navigationCotnroller)
         window?.rootViewController = navigationCotnroller
         window?.makeKeyAndVisible()
@@ -62,7 +62,4 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Save changes in the application's managed object context when the application transitions to the background.
         (UIApplication.shared.delegate as? AppDelegate)?.saveContext()
     }
-    
-    
 }
-

@@ -7,8 +7,9 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class SearchViewController: UIViewController {
     
+    private let labelHeaderSection = UILabel()
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
         tableView.register(CustomTableViewCell.self, forCellReuseIdentifier: CustomTableViewCell.identifier)
@@ -17,11 +18,22 @@ class ViewController: UIViewController {
         tableView.separatorStyle = .none
         return tableView
     }()
-    
+    private lazy var searchController: UISearchController = {
+        let searchController = UISearchController(searchResultsController: nil)
+        //        searchController.searchResultsUpdater = self
+        searchController.delegate = self
+        searchController.searchBar.delegate = self
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search something..."
+        searchController.searchBar.showsCancelButton = false
+        searchController.searchBar.autocapitalizationType = .allCharacters
+        definesPresentationContext = true
+        return searchController
+    }()
     private lazy var headerView = UIView.init(frame: CGRect.init(x: 0, y: 0, width: tableView.frame.width, height: 50))
-    private let labelHeaderSection = UILabel()
-
-
+    private var isSearching = true
+    private var searchQuery: String = ""
+    private var userArr = [RepoModal]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,6 +41,11 @@ class ViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         self.title = "Search"
+        //        navigationController?.hidesBarsOnSwipe = true
+        navigationItem.searchController = searchController
+        navigationItem.hidesSearchBarWhenScrolling = false
+        hideKeyboardWhenTappedAround()
+        userArr.append(RepoModal(userImage: UIImage(named: "Clara")!, name: "Marcus", stars: "3"))
     }
     
     override func viewDidLayoutSubviews() {
@@ -42,15 +59,42 @@ class ViewController: UIViewController {
         labelHeaderSection.frame = CGRect.init(x: 20, y: 0, width: headerView.frame.width - 10, height: headerView.frame.height - 10)
     }
     
+    private func hideKeyboardWhenTappedAround() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+    
+    @objc func dismissKeyboard() {
+        searchController.searchBar.endEditing(true)
+    }
 }
 
-extension ViewController: UITableViewDelegate, UITableViewDataSource {
+extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate {
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        if searchQuery != "" {
+            searchInGit()
+        }
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        searchQuery = searchText
+    }
+    
+    private func searchInGit() {
+    }
+}
+
+extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-            return 3
+        return userArr.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: CustomTableViewCell.identifier, for: indexPath) as? CustomTableViewCell else { return UITableViewCell() }
+        cell.namelbl.text = userArr[indexPath.row].name
+        cell.ownerRepoImage.image = userArr[indexPath.row].userImage
+        cell.starlbl.text = userArr[indexPath.row].stars
         return cell
     }
     
@@ -75,3 +119,5 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
 }
 
 //TODO: view for header in section in landscape leading == tableviewcell.leading
+//TODO: search in GIT func
+//TODO: show nav bar when scrolling up
