@@ -18,6 +18,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         navigationBarConfiguration(navigationCotnroller)
         window?.rootViewController = navigationCotnroller
         window?.makeKeyAndVisible()
+        window?.overrideUserInterfaceStyle = .light
     }
     
     private func navigationBarConfiguration (_ controller: UINavigationController) {

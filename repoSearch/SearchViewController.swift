@@ -9,7 +9,17 @@ import UIKit
 
 class SearchViewController: UIViewController {
     
-    private let labelHeaderSection = UILabel()
+    private lazy var searchController: UISearchController = {
+        let searchController = UISearchController(searchResultsController: nil)
+        searchController.delegate = self
+        searchController.searchBar.delegate = self
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search repositiry..."
+        searchController.searchBar.showsCancelButton = false
+        searchController.searchBar.autocapitalizationType = .allCharacters
+        definesPresentationContext = true
+        return searchController
+    }()
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
         tableView.register(CustomTableViewCell.self, forCellReuseIdentifier: CustomTableViewCell.identifier)
@@ -18,34 +28,40 @@ class SearchViewController: UIViewController {
         tableView.separatorStyle = .none
         return tableView
     }()
-    private lazy var searchController: UISearchController = {
-        let searchController = UISearchController(searchResultsController: nil)
-        //        searchController.searchResultsUpdater = self
-        searchController.delegate = self
-        searchController.searchBar.delegate = self
-        searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = "Search something..."
-        searchController.searchBar.showsCancelButton = false
-        searchController.searchBar.autocapitalizationType = .allCharacters
-        definesPresentationContext = true
-        return searchController
+    private let headerView: UIView = {
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: 300, height: 50))
+        headerView.backgroundColor = .white
+        return headerView
     }()
-    private lazy var headerView = UIView.init(frame: CGRect.init(x: 0, y: 0, width: tableView.frame.width, height: 50))
-    private var isSearching = true
+    private let labelHeaderSection: UILabel = {
+        let labelHeaderSection = UILabel()
+        labelHeaderSection.textAlignment = .left
+        labelHeaderSection.font = .systemFont(ofSize: 25, weight: .heavy)
+        labelHeaderSection.textColor = .black
+        return labelHeaderSection
+    }()
+    
+    private var isSearching = false
     private var searchQuery: String = ""
-    private var userArr = [RepoModal]()
+    private var currentSearchPage = 1
+    private var currentPopularPage = 1
+    private var repos = [Repo]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.title = "Search"
         self.view.addSubview(tableView)
         tableView.delegate = self
         tableView.dataSource = self
-        self.title = "Search"
-        //        navigationController?.hidesBarsOnSwipe = true
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
+        searchController.hidesNavigationBarDuringPresentation = false
         hideKeyboardWhenTappedAround()
-        userArr.append(RepoModal(userImage: UIImage(named: "Clara")!, name: "Marcus", stars: "3"))
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        let searchUrlString = "https://api.github.com/search/repositories?q=stars:%3E1&sort=stars&per_page=30&page=1"
+        searchInGit(indexPath: IndexPath(row: 0, section: 0), searchUrlString: searchUrlString)
     }
     
     override func viewDidLayoutSubviews() {
@@ -56,7 +72,7 @@ class SearchViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
         ])
-        labelHeaderSection.frame = CGRect.init(x: 20, y: 0, width: headerView.frame.width - 10, height: headerView.frame.height - 10)
+        labelHeaderSection.frame = CGRect(x: 20, y: 0, width: 300, height: 50)
     }
     
     private func hideKeyboardWhenTappedAround() {
@@ -73,7 +89,10 @@ class SearchViewController: UIViewController {
 extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate {
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
         if searchQuery != "" {
-            searchInGit()
+            isSearching = true
+            self.repos.removeAll()
+            guard let searchUrlString = "https://api.github.com/search/repositories?q=\(searchQuery)&per_page=30&page=\(currentSearchPage)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return }
+            searchInGit(indexPath: IndexPath(row: 0, section: 0), searchUrlString: searchUrlString)
         }
     }
     
@@ -81,21 +100,77 @@ extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate 
         searchQuery = searchText
     }
     
-    private func searchInGit() {
+    private func searchInGit(indexPath: IndexPath, searchUrlString: String) {
+        self.tableView.tableFooterView = createSpinerFooter()
+        let searchUrl = URL(string: searchUrlString)
+        let session = URLSession.shared
+        guard let url = searchUrl else { return }
+        let task = session.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print(error)
+                return
+            }
+            do {
+                let decoder = JSONDecoder()
+                let json = try decoder.decode(Root.self, from: data!)
+                for item in json.items {
+                    
+                    guard let repoOwnerAvatarUrl = URL(string: item.owner.avatar_url) else { return }
+                    if let imageData = try? Data(contentsOf: repoOwnerAvatarUrl) {
+                        if let loadedImage = UIImage(data: imageData) {
+                            self.repos.append(Repo(repoName: item.name, repoStars: item.stargazers_count, repoOwner: nil, repoOwnerAvatar: loadedImage))
+                        }
+                    } else {
+                        self.repos.append(Repo(repoName: item.name, repoStars: item.stargazers_count, repoOwner: nil, repoOwnerAvatar: nil))
+                    }
+                }
+                DispatchQueue.main.async {
+                    self.tableView.reloadData()
+                    self.tableView.scrollToRow(at: indexPath, at: .none, animated: true)
+                    self.tableView.tableFooterView = nil
+                }
+            } catch {
+                print("Error during JSON serialization: \(self.searchQuery)", error)
+            }
+        }
+        task.resume()
     }
+    
 }
 
 extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return userArr.count
+        if repos.isEmpty {
+            return 0
+        } else {
+            return repos.count
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: CustomTableViewCell.identifier, for: indexPath) as? CustomTableViewCell else { return UITableViewCell() }
-        cell.namelbl.text = userArr[indexPath.row].name
-        cell.ownerRepoImage.image = userArr[indexPath.row].userImage
-        cell.starlbl.text = userArr[indexPath.row].stars
+        if !repos.isEmpty {
+            cell.namelbl.text = repos[indexPath.row].repoName
+            cell.ownerRepoImage.image = repos[indexPath.row].repoOwnerAvatar
+            if let stars = repos[indexPath.row].repoStars {
+                cell.starlbl.text = "☆ \(stars)"
+            }
+        }
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if indexPath.row == repos.count - 1 {
+            if isSearching {
+                currentSearchPage += 1
+                guard let searchUrlString = "https://api.github.com/search/repositories?q=\(searchQuery)&per_page=30&page=\(currentSearchPage)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return }
+                searchInGit(indexPath: indexPath, searchUrlString: searchUrlString)
+            } else {
+                currentPopularPage += 1
+                let searchUrlString = "https://api.github.com/search/repositories?q=stars:%3E1&sort=stars&per_page=30&page=\(currentPopularPage)"
+                searchInGit(indexPath: indexPath, searchUrlString: searchUrlString)
+            }
+        }
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -107,17 +182,25 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        headerView.backgroundColor = .white
-        labelHeaderSection.frame = CGRect.init(x: 17, y: 0, width: headerView.frame.width - 10, height: headerView.frame.height - 10)
-        labelHeaderSection.text = "Repositories"
-        labelHeaderSection.textAlignment = .left
-        labelHeaderSection.font = .systemFont(ofSize: 25, weight: .heavy)
-        labelHeaderSection.textColor = .black
+        if isSearching {
+            labelHeaderSection.text = "Repositories"
+        } else {
+            labelHeaderSection.text = "Popular repositories"
+        }
         headerView.addSubview(labelHeaderSection)
         return headerView
     }
 }
 
+extension UIViewController {
+    func createSpinerFooter() -> UIView {
+        let footerView = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: 100))
+        let spiner = UIActivityIndicatorView()
+        spiner.center = footerView.center
+        spiner.startAnimating()
+        footerView.addSubview(spiner)
+        return footerView
+    }
+}
+
 //TODO: view for header in section in landscape leading == tableviewcell.leading
-//TODO: search in GIT func
-//TODO: show nav bar when scrolling up

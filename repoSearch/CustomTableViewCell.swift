@@ -17,15 +17,16 @@ class CustomTableViewCell: UITableViewCell {
         return userImage
     }()
     lazy var namelbl: UILabel = {
-        let lbl = UILabel()
-        lbl.textAlignment = .left
-        lbl.font = UIFont.boldSystemFont(ofSize: 18)
-        return lbl
+        let namelbl = UILabel()
+        namelbl.textAlignment = .left
+        namelbl.font = UIFont.boldSystemFont(ofSize: 18)
+        return namelbl
     }()
     lazy var starlbl: UILabel = {
-        let lbl = UILabel()
-        lbl.textAlignment = .left
-        return lbl
+        let starlbl = UILabel()
+        starlbl.textAlignment = .left
+        starlbl.textColor = .gray
+        return starlbl
     }()
     lazy private var pointer: UIImageView = {
         let pointerImage = UIImageView()
@@ -35,9 +36,9 @@ class CustomTableViewCell: UITableViewCell {
         return pointerImage
     }()
     lazy private var backView: UIView = {
-        let view = UIView(frame: CGRect(x: 10, y: 6, width: contentView.frame.size.width - 20, height: 110))
-        view.backgroundColor = .systemGray5
-        return view
+        let backView = UIView(frame: CGRect(x: 10, y: 6, width: contentView.frame.size.width - 20, height: 110))
+        backView.backgroundColor = .systemGray5
+        return backView
     }()
     
     override func layoutSubviews() {
