@@ -40,7 +40,12 @@ class SearchViewController: UIViewController {
         labelHeaderSection.textColor = .black
         return labelHeaderSection
     }()
-    
+    private let backBarButtonItem: UIBarButtonItem = {
+        let backBarButtonItem = UIBarButtonItem(title: "Back", style: .plain, target: nil, action: nil)
+        backBarButtonItem.tintColor = .white
+        return backBarButtonItem
+    }()
+    private let repoVC = RepoViewController()
     private var isSearching = false
     private var searchQuery: String = ""
     private var currentSearchPage = 1
@@ -55,6 +60,7 @@ class SearchViewController: UIViewController {
         tableView.dataSource = self
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
+        navigationItem.backBarButtonItem = backBarButtonItem
         searchController.hidesNavigationBarDuringPresentation = false
         hideKeyboardWhenTappedAround()
     }
@@ -73,6 +79,7 @@ class SearchViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
         ])
         labelHeaderSection.frame = CGRect(x: 20, y: 0, width: 300, height: 50)
+//    y: self.view.frame.midY
     }
     
     private func hideKeyboardWhenTappedAround() {
@@ -155,6 +162,13 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
             if let stars = repos[indexPath.row].repoStars {
                 cell.starlbl.text = "☆ \(stars)"
             }
+            cell.backView.addAction(UIAction(handler: {_ in
+//                print(self.repos[indexPath.row].repoName, self.repos[indexPath.row].repoStars)
+//                self.navigationController?.pushViewController(self.repoVC, animated: true)
+                if !(self.navigationController!.viewControllers.contains(self.repoVC)){
+                    self.navigationController?.pushViewController(self.repoVC, animated:true)
+                }
+            }), for: .touchUpInside)
         }
         return cell
     }
@@ -204,3 +218,4 @@ extension UIViewController {
 }
 
 //TODO: view for header in section in landscape leading == tableviewcell.leading
+//y: self.view.frame.midY

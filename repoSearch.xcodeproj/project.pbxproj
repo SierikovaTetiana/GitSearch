@@ -16,6 +16,8 @@
 		6030B9262832B2D4008CD0E1 /* CustomTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6030B9252832B2D3008CD0E1 /* CustomTableViewCell.swift */; };
 		6030B94D2834D7C9008CD0E1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6030B94C2834D7C9008CD0E1 /* Main.storyboard */; };
 		60777A672834E43C0078A705 /* RepoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60777A662834E43C0078A705 /* RepoModel.swift */; };
+		60777A69283646E40078A705 /* RepoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60777A68283646E40078A705 /* RepoViewController.swift */; };
+		60777A6B2836BE440078A705 /* CustomRepoTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60777A6A2836BE440078A705 /* CustomRepoTableViewCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +32,8 @@
 		6030B9252832B2D3008CD0E1 /* CustomTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTableViewCell.swift; sourceTree = "<group>"; };
 		6030B94C2834D7C9008CD0E1 /* Main.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		60777A662834E43C0078A705 /* RepoModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RepoModel.swift; sourceTree = "<group>"; };
+		60777A68283646E40078A705 /* RepoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoViewController.swift; sourceTree = "<group>"; };
+		60777A6A2836BE440078A705 /* CustomRepoTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomRepoTableViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +70,8 @@
 				6030B910283271C0008CD0E1 /* SceneDelegate.swift */,
 				6030B912283271C0008CD0E1 /* SearchViewController.swift */,
 				60777A662834E43C0078A705 /* RepoModel.swift */,
+				60777A68283646E40078A705 /* RepoViewController.swift */,
+				60777A6A2836BE440078A705 /* CustomRepoTableViewCell.swift */,
 				6030B9252832B2D3008CD0E1 /* CustomTableViewCell.swift */,
 				6030B91A283271C4008CD0E1 /* Assets.xcassets */,
 				6030B94C2834D7C9008CD0E1 /* Main.storyboard */,
@@ -151,6 +157,8 @@
 				6030B9262832B2D4008CD0E1 /* CustomTableViewCell.swift in Sources */,
 				6030B90F283271C0008CD0E1 /* AppDelegate.swift in Sources */,
 				6030B911283271C0008CD0E1 /* SceneDelegate.swift in Sources */,
+				60777A6B2836BE440078A705 /* CustomRepoTableViewCell.swift in Sources */,
+				60777A69283646E40078A705 /* RepoViewController.swift in Sources */,
 				60777A672834E43C0078A705 /* RepoModel.swift in Sources */,
 				6030B919283271C0008CD0E1 /* repoSearch.xcdatamodeld in Sources */,
 			);
