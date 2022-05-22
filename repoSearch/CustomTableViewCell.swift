@@ -40,8 +40,8 @@ class CustomTableViewCell: UITableViewCell {
         pointer.translatesAutoresizingMaskIntoConstraints = false
         return pointer
     }()
-    lazy var backView: UIButton = {
-        let backView = UIButton(frame: CGRect(x: 10, y: 6, width: contentView.frame.size.width - 20, height: 110))
+    lazy var backView: UIView = {
+        let backView = UIView()
         backView.backgroundColor = .systemGray5
         backView.layer.cornerRadius = 10
         backView.clipsToBounds = true
@@ -53,16 +53,16 @@ class CustomTableViewCell: UITableViewCell {
         backView.frame = CGRect(x: 20, y: 6, width: contentView.frame.size.width - 40, height: 110)
         
         NSLayoutConstraint.activate([
-            pointer.centerYAnchor.constraint(equalTo: backView.centerYAnchor, constant: 0.0),
-            pointer.leadingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -50.0),
+            pointer.centerYAnchor.constraint(equalTo: backView.centerYAnchor, constant: 0),
+            pointer.leadingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -50),
             
-            namelbl.trailingAnchor.constraint(equalTo: pointer.leadingAnchor, constant: -10.0),
-            namelbl.leadingAnchor.constraint(equalTo: ownerRepoImage.trailingAnchor, constant: 10.0),
-            namelbl.centerYAnchor.constraint(equalTo: backView.centerYAnchor, constant: -15.0),
+            namelbl.trailingAnchor.constraint(equalTo: pointer.leadingAnchor, constant: -10),
+            namelbl.leadingAnchor.constraint(equalTo: ownerRepoImage.trailingAnchor, constant: 10),
+            namelbl.centerYAnchor.constraint(equalTo: backView.centerYAnchor, constant: -15),
             
-            starlbl.trailingAnchor.constraint(equalTo: pointer.leadingAnchor, constant: -10.0),
-            starlbl.leadingAnchor.constraint(equalTo: ownerRepoImage.trailingAnchor, constant: 10.0),
-            starlbl.centerYAnchor.constraint(equalTo: backView.centerYAnchor, constant: 10.0)
+            starlbl.trailingAnchor.constraint(equalTo: pointer.leadingAnchor, constant: -10),
+            starlbl.leadingAnchor.constraint(equalTo: ownerRepoImage.trailingAnchor, constant: 10),
+            starlbl.centerYAnchor.constraint(equalTo: backView.centerYAnchor, constant: 10)
         ])
     }
     

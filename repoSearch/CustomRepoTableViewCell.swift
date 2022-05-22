@@ -57,24 +57,28 @@ class CustomRepoTableViewCell: UITableViewCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         NSLayoutConstraint.activate([
-            numberCommit.centerYAnchor.constraint(equalTo: contentView.centerYAnchor, constant: 0.0),
-            numberCommit.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0.0),
+            numberCommit.centerYAnchor.constraint(equalTo: commitAuthorName.centerYAnchor, constant: 25),
+            numberCommit.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0),
             numberCommit.widthAnchor.constraint(equalToConstant: 50),
             numberCommit.heightAnchor.constraint(equalToConstant: 50),
             
-            commitMessage.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0.0),
-            commitMessage.leadingAnchor.constraint(equalTo: numberCommit.trailingAnchor, constant: 30.0),
-            commitMessage.topAnchor.constraint(equalTo: commitEmail.bottomAnchor, constant: 10.0),
-            commitMessage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10.0),
+            commitMessage.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
+            commitMessage.leadingAnchor.constraint(equalTo: numberCommit.trailingAnchor, constant: 30),
+            commitMessage.topAnchor.constraint(equalTo: commitEmail.bottomAnchor, constant: 5),
+            commitMessage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
                         
-            commitEmail.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0.0),
-            commitEmail.leadingAnchor.constraint(equalTo: numberCommit.trailingAnchor, constant: 30.0),
+            commitEmail.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
+            commitEmail.leadingAnchor.constraint(equalTo: numberCommit.trailingAnchor, constant: 30),
 
             commitAuthorName.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10.0),
-            commitAuthorName.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0.0),
-            commitAuthorName.leadingAnchor.constraint(equalTo: numberCommit.trailingAnchor, constant: 30.0),
-            commitAuthorName.bottomAnchor.constraint(equalTo: commitEmail.topAnchor, constant: -5.0),
+            commitAuthorName.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
+            commitAuthorName.leadingAnchor.constraint(equalTo: numberCommit.trailingAnchor, constant: 30),
+            commitAuthorName.bottomAnchor.constraint(equalTo: commitEmail.topAnchor, constant: -5),
         ])
+    }
+    
+    override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(false, animated: false)
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {

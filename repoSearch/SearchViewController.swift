@@ -25,6 +25,7 @@ class SearchViewController: UIViewController {
         tableView.register(CustomTableViewCell.self, forCellReuseIdentifier: CustomTableViewCell.identifier)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = .white
+        tableView.allowsSelection = true
         tableView.separatorStyle = .none
         return tableView
     }()
@@ -40,14 +41,23 @@ class SearchViewController: UIViewController {
         labelHeaderSection.textColor = .black
         return labelHeaderSection
     }()
+    private let nothingFoundPlaceholder: UIImageView = {
+        let nothingFoundPlaceholder = UIImageView()
+        nothingFoundPlaceholder.image = UIImage(named: "NothingFound")
+        nothingFoundPlaceholder.contentMode = .scaleAspectFill
+        return nothingFoundPlaceholder
+    }()
     private let backBarButtonItem: UIBarButtonItem = {
         let backBarButtonItem = UIBarButtonItem(title: "Back", style: .plain, target: nil, action: nil)
         backBarButtonItem.tintColor = .white
         return backBarButtonItem
     }()
+    private let secrets = Secrets()
+    private let searchUrlString = "https://api.github.com/search/repositories?q=stars:%3E1&sort=stars&page=1"
     private let repoVC = RepoViewController()
     private var isSearching = false
     private var searchQuery: String = ""
+    private var displCells = 0
     private var currentSearchPage = 1
     private var currentPopularPage = 1
     private var repos = [Repo]()
@@ -63,10 +73,7 @@ class SearchViewController: UIViewController {
         navigationItem.backBarButtonItem = backBarButtonItem
         searchController.hidesNavigationBarDuringPresentation = false
         hideKeyboardWhenTappedAround()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        let searchUrlString = "https://api.github.com/search/repositories?q=stars:%3E1&sort=stars&per_page=30&page=1"
+        //        askForToken()
         searchInGit(indexPath: IndexPath(row: 0, section: 0), searchUrlString: searchUrlString)
     }
     
@@ -79,7 +86,8 @@ class SearchViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
         ])
         labelHeaderSection.frame = CGRect(x: 20, y: 0, width: 300, height: 50)
-//    y: self.view.frame.midY
+        nothingFoundPlaceholder.frame = CGRect(x: tableView.frame.midX, y: tableView.frame.midY, width: view.frame.size.width/4, height: view.frame.height/4)
+        nothingFoundPlaceholder.center = tableView.center
     }
     
     private func hideKeyboardWhenTappedAround() {
@@ -91,14 +99,38 @@ class SearchViewController: UIViewController {
     @objc func dismissKeyboard() {
         searchController.searchBar.endEditing(true)
     }
+    //
+    //    func askForToken() {
+    //        let dialogMessage = UIAlertController(title: "", message: "This app uses a GIT REST API token for displaying results correctly. Please enter your token to the textfield below or use app with rate limits", preferredStyle: .alert)
+    //        dialogMessage.addTextField(configurationHandler: { textField in
+    //            textField.placeholder = "TOKEN"
+    //        })
+    //        let enterToken = UIAlertAction(title: "Enter TOKEN", style: .default, handler: { (action) -> Void in
+    //            print("Ok button tapped")
+    //        })
+    //        let useLimits = UIAlertAction(title: "Use with limits", style: .cancel) { (action) -> Void in
+    //            print("Cancel button tapped")
+    //        }
+    //        dialogMessage.addAction(enterToken)
+    //        dialogMessage.addAction(useLimits)
+    //        self.present(dialogMessage, animated: true, completion: nil)
+    //    }
 }
 
 extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate {
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
         if searchQuery != "" {
-            isSearching = true
+            nothingFoundPlaceholder.removeFromSuperview()
             self.repos.removeAll()
-            guard let searchUrlString = "https://api.github.com/search/repositories?q=\(searchQuery)&per_page=30&page=\(currentSearchPage)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return }
+            self.tableView.reloadData()
+            isSearching = true
+            guard let safeSearchUrlString = "https://api.github.com/search/repositories?q=is:public \(searchQuery)&page=\(currentSearchPage)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return }
+            searchInGit(indexPath: IndexPath(row: 0, section: 0), searchUrlString: safeSearchUrlString)
+        } else {
+            isSearching = false
+            nothingFoundPlaceholder.removeFromSuperview()
+            self.repos.removeAll()
+            self.tableView.reloadData()
             searchInGit(indexPath: IndexPath(row: 0, section: 0), searchUrlString: searchUrlString)
         }
     }
@@ -108,41 +140,59 @@ extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate 
     }
     
     private func searchInGit(indexPath: IndexPath, searchUrlString: String) {
-        self.tableView.tableFooterView = createSpinerFooter()
+        self.tableView.tableFooterView = spinerFooter()
+        currentSearchPage = 1
         let searchUrl = URL(string: searchUrlString)
-        let session = URLSession.shared
         guard let url = searchUrl else { return }
+        var session = URLSession.shared
+        let conf = URLSessionConfiguration.default
+        conf.httpAdditionalHeaders = ["Authorization": "token \(secrets.tokenGitApi)"]
+        session = URLSession(configuration: conf)
         let task = session.dataTask(with: url) { data, response, error in
             if let error = error {
+                DispatchQueue.main.async {
+                    self.tableView.tableFooterView = nil
+                    self.view.addSubview(self.nothingFoundPlaceholder)
+                }
                 print(error)
                 return
             }
             do {
                 let decoder = JSONDecoder()
-                let json = try decoder.decode(Root.self, from: data!)
+                guard let safeData = data else { return }
+                let json = try decoder.decode(Root.self, from: safeData)
                 for item in json.items {
-                    
                     guard let repoOwnerAvatarUrl = URL(string: item.owner.avatar_url) else { return }
                     if let imageData = try? Data(contentsOf: repoOwnerAvatarUrl) {
                         if let loadedImage = UIImage(data: imageData) {
-                            self.repos.append(Repo(repoName: item.name, repoStars: item.stargazers_count, repoOwner: nil, repoOwnerAvatar: loadedImage))
+                            self.repos.append(Repo(repoName: item.name, repoStars: item.stargazers_count, repoOwner: item.owner.login, repoOwnerAvatar: loadedImage, repoUrl: item.html_url))
                         }
                     } else {
-                        self.repos.append(Repo(repoName: item.name, repoStars: item.stargazers_count, repoOwner: nil, repoOwnerAvatar: nil))
+                        self.repos.append(Repo(repoName: item.name, repoStars: item.stargazers_count, repoOwner: item.owner.login, repoOwnerAvatar: nil, repoUrl: item.html_url))
                     }
                 }
                 DispatchQueue.main.async {
                     self.tableView.reloadData()
-                    self.tableView.scrollToRow(at: indexPath, at: .none, animated: true)
-                    self.tableView.tableFooterView = nil
+                    if self.repos.isEmpty {
+                        self.tableView.tableFooterView = nil
+                        self.view.addSubview(self.nothingFoundPlaceholder)
+                    } else {
+                        self.displCells = self.tableView.visibleCells.count
+                        if self.tableView.indexPathExists(indexPath: IndexPath(row: indexPath.row, section: indexPath.section)) {
+                            self.tableView.scrollToRow(at: indexPath, at: .none, animated: true)
+                        }
+                        self.tableView.tableFooterView = nil
+                    }
                 }
             } catch {
-                print("Error during JSON serialization: \(self.searchQuery)", error)
+                DispatchQueue.main.async {
+                    self.tableView.tableFooterView = nil
+                }
+                print("Error during JSON serialization SearchVC: \(searchUrlString) ", error)
             }
         }
         task.resume()
     }
-    
 }
 
 extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
@@ -162,27 +212,32 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
             if let stars = repos[indexPath.row].repoStars {
                 cell.starlbl.text = "☆ \(stars)"
             }
-            cell.backView.addAction(UIAction(handler: {_ in
-//                print(self.repos[indexPath.row].repoName, self.repos[indexPath.row].repoStars)
-//                self.navigationController?.pushViewController(self.repoVC, animated: true)
-                if !(self.navigationController!.viewControllers.contains(self.repoVC)){
-                    self.navigationController?.pushViewController(self.repoVC, animated:true)
-                }
-            }), for: .touchUpInside)
         }
         return cell
     }
     
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        guard let navController = self.navigationController else { return }
+        if !(navController.viewControllers.contains(self.repoVC)) {
+            self.repoVC.repoDetails.removeAll()
+            self.repoVC.commitDetails.removeAll()
+            self.repoVC.repoDetails.append(Repo(repoName: self.repos[indexPath.row].repoName, repoStars: self.repos[indexPath.row].repoStars, repoOwner: self.repos[indexPath.row].repoOwner, repoOwnerAvatar: self.repos[indexPath.row].repoOwnerAvatar, repoUrl: self.repos[indexPath.row].repoUrl))
+            self.navigationController?.pushViewController(self.repoVC, animated:true)
+        }
+    }
+    
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if indexPath.row == repos.count - 1 {
-            if isSearching {
-                currentSearchPage += 1
-                guard let searchUrlString = "https://api.github.com/search/repositories?q=\(searchQuery)&per_page=30&page=\(currentSearchPage)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return }
-                searchInGit(indexPath: indexPath, searchUrlString: searchUrlString)
-            } else {
-                currentPopularPage += 1
-                let searchUrlString = "https://api.github.com/search/repositories?q=stars:%3E1&sort=stars&per_page=30&page=\(currentPopularPage)"
-                searchInGit(indexPath: indexPath, searchUrlString: searchUrlString)
+        if repos.count != displCells {
+            if indexPath.row == repos.count - 1 {
+                if isSearching {
+                    currentSearchPage += 1
+                    guard let searchUrlString = "https://api.github.com/search/repositories?q=\(searchQuery)&page=\(currentSearchPage)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return }
+                    searchInGit(indexPath: indexPath, searchUrlString: searchUrlString)
+                } else {
+                    currentPopularPage += 1
+                    let searchUrlString = "https://api.github.com/search/repositories?q=stars:%3E1&sort=stars&page=\(currentPopularPage)"
+                    searchInGit(indexPath: indexPath, searchUrlString: searchUrlString)
+                }
             }
         }
     }
@@ -207,7 +262,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
 }
 
 extension UIViewController {
-    func createSpinerFooter() -> UIView {
+    func spinerFooter() -> UIView {
         let footerView = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: 100))
         let spiner = UIActivityIndicatorView()
         spiner.center = footerView.center
@@ -217,5 +272,18 @@ extension UIViewController {
     }
 }
 
+extension UITableView {
+    func indexPathExists(indexPath:IndexPath) -> Bool {
+        if indexPath.section >= self.numberOfSections {
+            return false
+        }
+        if indexPath.row >= self.numberOfRows(inSection: indexPath.section) {
+            return false
+        }
+        return true
+    }
+}
+
 //TODO: view for header in section in landscape leading == tableviewcell.leading
-//y: self.view.frame.midY
+//TODO: alert for errors
+//TODO: ask for token

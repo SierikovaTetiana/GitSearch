@@ -14,6 +14,7 @@ struct Root : Codable {
 struct Repository : Codable {
     let name : String
     let stargazers_count : Int
+    let html_url : String
     let owner : Owner
 }
 
@@ -27,4 +28,26 @@ struct Repo {
     let repoStars : Int?
     let repoOwner : String?
     let repoOwnerAvatar : UIImage?
+    let repoUrl : String?
+}
+//
+
+struct RootForRepoCommits : Codable {
+    let commit : CommitDetails
+}
+
+struct CommitDetails : Codable {
+    let author : Commit
+    let message : String
+}
+
+struct Commit : Codable {
+    let name : String
+    let email : String
+}
+
+struct RepoCommits {
+    let repoCommit : String?
+    let commitEmail : String?
+    let commitAuthor : String?
 }
