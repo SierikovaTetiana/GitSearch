@@ -52,9 +52,11 @@ class SearchViewController: UIViewController {
         backBarButtonItem.tintColor = .white
         return backBarButtonItem
     }()
-    private let secrets = Secrets()
     private let searchUrlString = "https://api.github.com/search/repositories?q=stars:%3E1&sort=stars&page=1"
     private let repoVC = RepoViewController()
+    private var userToken: String = ""
+    //    private var adminSecrets = Secrets()
+    private var searchWithLimits = true
     private var isSearching = false
     private var searchQuery: String = ""
     private var displCells = 0
@@ -73,7 +75,7 @@ class SearchViewController: UIViewController {
         navigationItem.backBarButtonItem = backBarButtonItem
         searchController.hidesNavigationBarDuringPresentation = false
         hideKeyboardWhenTappedAround()
-        //        askForToken()
+        askForToken(titleAlert: "Ask for TOKEN", messageAlert: "Please provide a GitHub personal access token to avoid API limitations.")
         searchInGit(indexPath: IndexPath(row: 0, section: 0), searchUrlString: searchUrlString)
     }
     
@@ -99,22 +101,23 @@ class SearchViewController: UIViewController {
     @objc func dismissKeyboard() {
         searchController.searchBar.endEditing(true)
     }
-    //
-    //    func askForToken() {
-    //        let dialogMessage = UIAlertController(title: "", message: "This app uses a GIT REST API token for displaying results correctly. Please enter your token to the textfield below or use app with rate limits", preferredStyle: .alert)
-    //        dialogMessage.addTextField(configurationHandler: { textField in
-    //            textField.placeholder = "TOKEN"
-    //        })
-    //        let enterToken = UIAlertAction(title: "Enter TOKEN", style: .default, handler: { (action) -> Void in
-    //            print("Ok button tapped")
-    //        })
-    //        let useLimits = UIAlertAction(title: "Use with limits", style: .cancel) { (action) -> Void in
-    //            print("Cancel button tapped")
-    //        }
-    //        dialogMessage.addAction(enterToken)
-    //        dialogMessage.addAction(useLimits)
-    //        self.present(dialogMessage, animated: true, completion: nil)
-    //    }
+    
+    private func askForToken(titleAlert: String, messageAlert: String) {
+        let dialogMessage = UIAlertController(title: titleAlert, message: messageAlert, preferredStyle: .alert)
+        dialogMessage.addTextField(configurationHandler: { textField in
+            textField.placeholder = "your token" })
+        let enterToken = UIAlertAction(title: "Enter Token", style: .default, handler: { (action) -> Void in
+            self.userToken = dialogMessage.textFields![0].text!
+            self.searchWithLimits = false
+            self.searchInGit(indexPath: IndexPath(row: 0, section: 0), searchUrlString: self.searchUrlString)
+        })
+        let useLimits = UIAlertAction(title: "Use with limits", style: .cancel) { (action) -> Void in
+            self.searchWithLimits = true
+        }
+        dialogMessage.addAction(enterToken)
+        dialogMessage.addAction(useLimits)
+        self.present(dialogMessage, animated: true, completion: nil)
+    }
 }
 
 extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate {
@@ -146,9 +149,23 @@ extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate 
         guard let url = searchUrl else { return }
         var session = URLSession.shared
         let conf = URLSessionConfiguration.default
-        conf.httpAdditionalHeaders = ["Authorization": "token \(secrets.tokenGitApi)"]
-        session = URLSession(configuration: conf)
+        if !searchWithLimits && userToken != "" {
+            conf.httpAdditionalHeaders = ["Authorization": "token \(userToken)"]
+            session = URLSession(configuration: conf)
+        }
         let task = session.dataTask(with: url) { data, response, error in
+            if let httpResponse = response as? HTTPURLResponse {
+                print(httpResponse.statusCode)
+                if httpResponse.statusCode == 403 {
+                    DispatchQueue.main.async {
+                        self.askForToken(titleAlert: "You have reached the API limits", messageAlert: "Please provide a valid GitHub personal access token")
+                    }
+                } else if httpResponse.statusCode == 401 {
+                    DispatchQueue.main.async {
+                        self.askForToken(titleAlert: "Your Token is not valid.", messageAlert: "Please provide a valid GitHub personal access token")
+                    }
+                }
+            }
             if let error = error {
                 DispatchQueue.main.async {
                     self.tableView.tableFooterView = nil
@@ -283,7 +300,3 @@ extension UITableView {
         return true
     }
 }
-
-//TODO: view for header in section in landscape leading == tableviewcell.leading
-//TODO: alert for errors
-//TODO: ask for token

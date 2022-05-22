@@ -254,5 +254,3 @@ extension RepoViewController: UITableViewDelegate, UITableViewDataSource {
         return headerView
     }
 }
-
-//TODO: oposite text color on image
