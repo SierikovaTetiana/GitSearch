@@ -7,7 +7,7 @@
 
 import UIKit
 
-struct Root : Codable {
+struct SearchRepos : Codable {
     let items : [Repository]
 }
 
@@ -29,25 +29,4 @@ struct Repo {
     let repoOwner : String?
     let repoOwnerAvatar : UIImage?
     let repoUrl : String?
-}
-//
-
-struct RootForRepoCommits : Codable {
-    let commit : CommitDetails
-}
-
-struct CommitDetails : Codable {
-    let author : Commit
-    let message : String
-}
-
-struct Commit : Codable {
-    let name : String
-    let email : String
-}
-
-struct RepoCommits {
-    let repoCommit : String?
-    let commitEmail : String?
-    let commitAuthor : String?
 }

@@ -23,16 +23,14 @@ class CustomRepoTableViewCell: UITableViewCell {
         commitAuthorName.translatesAutoresizingMaskIntoConstraints = false
         return commitAuthorName
     }()
-    
     lazy var commitEmail: UILabel = {
         let commitEmail = UILabel()
         commitEmail.textAlignment = .left
-        commitEmail.clipsToBounds = true
+        commitEmail.numberOfLines = 0
         commitEmail.font = UIFont.boldSystemFont(ofSize: 18)
         commitEmail.translatesAutoresizingMaskIntoConstraints = false
         return commitEmail
     }()
-    
     lazy var commitMessage: UILabel = {
         let commitMessage = UILabel()
         commitMessage.textAlignment = .left
@@ -42,7 +40,6 @@ class CustomRepoTableViewCell: UITableViewCell {
         commitMessage.translatesAutoresizingMaskIntoConstraints = false
         return commitMessage
     }()
-    
     lazy var numberCommit: UILabel = {
         let numberCommit = UILabel()
         numberCommit.textAlignment = .center

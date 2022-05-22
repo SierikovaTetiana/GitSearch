@@ -15,7 +15,6 @@ class RepoViewController: UIViewController {
         repoOwnerImage.clipsToBounds = true
         return repoOwnerImage
     }()
-    
     private let repoTableView: UITableView = {
         let repoTableView = UITableView(frame: .zero, style: .grouped)
         repoTableView.register(CustomRepoTableViewCell.self, forCellReuseIdentifier: CustomRepoTableViewCell.identifier)
@@ -26,7 +25,6 @@ class RepoViewController: UIViewController {
         repoTableView.separatorStyle = .singleLine
         return repoTableView
     }()
-    
     private lazy var shareButton: UIButton = {
         let shareButton = UIButton()
         shareButton.backgroundColor = .systemGray5
@@ -38,7 +36,6 @@ class RepoViewController: UIViewController {
         shareButton.translatesAutoresizingMaskIntoConstraints = false
         return shareButton
     }()
-    
     private lazy var viewOnlineButton: UIButton = {
         let viewOnlineButton = UIButton()
         viewOnlineButton.setTitle("VIEW ONLINE", for: .normal)
@@ -50,7 +47,6 @@ class RepoViewController: UIViewController {
         viewOnlineButton.translatesAutoresizingMaskIntoConstraints = false
         return viewOnlineButton
     }()
-    
     private let repoLabel: UILabel = {
         let repoLabel = UILabel()
         repoLabel.text = "Repo title"
@@ -59,7 +55,6 @@ class RepoViewController: UIViewController {
         repoLabel.translatesAutoresizingMaskIntoConstraints = false
         return repoLabel
     }()
-    
     private let repoBy: UILabel = {
         let repoBy = UILabel()
         repoBy.text = "REPO BY"
@@ -68,7 +63,6 @@ class RepoViewController: UIViewController {
         repoBy.translatesAutoresizingMaskIntoConstraints = false
         return repoBy
     }()
-    
     private let repoOwnerName: UILabel = {
         let repoOwnerName = UILabel()
         repoOwnerName.text = "Repo author name"
@@ -77,7 +71,6 @@ class RepoViewController: UIViewController {
         repoOwnerName.translatesAutoresizingMaskIntoConstraints = false
         return repoOwnerName
     }()
-    
     private let stars: UILabel = {
         let stars = UILabel()
         stars.text = "Number of stars"
@@ -163,6 +156,11 @@ class RepoViewController: UIViewController {
         ])
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        repoDetails.removeAll()
+        commitDetails.removeAll()
+    }
+    
     @objc func shareButtonTapped(sender: UIButton!) {
         if let strRepoUrl = repoDetails[0].repoUrl, let repoName = repoDetails[0].repoName {
             let shareButtonVc = UIActivityViewController(activityItems: [repoName, strRepoUrl], applicationActivities: nil)
@@ -195,8 +193,7 @@ class RepoViewController: UIViewController {
                     do {
                         let decoder = JSONDecoder()
                         guard let safeData = data else { return }
-                        let json = try decoder.decode([RootForRepoCommits].self, from: safeData)
-                        print(json)
+                        let json = try decoder.decode([SearchCommits].self, from: safeData)
                         for item in json {
                             self.commitDetails.append(RepoCommits(repoCommit: item.commit.message, commitEmail: item.commit.author.email, commitAuthor: item.commit.author.name))
                         }
@@ -214,6 +211,7 @@ class RepoViewController: UIViewController {
     }
 }
 
+// MARK: - TableView delegate
 extension RepoViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return commitDetails.count

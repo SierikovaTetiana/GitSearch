@@ -107,7 +107,9 @@ class SearchViewController: UIViewController {
         dialogMessage.addTextField(configurationHandler: { textField in
             textField.placeholder = "your token" })
         let enterToken = UIAlertAction(title: "Enter Token", style: .default, handler: { (action) -> Void in
-            self.userToken = dialogMessage.textFields![0].text!
+            guard let textFields = dialogMessage.textFields else { return }
+            guard let safeText = textFields[0].text else { return }
+            self.userToken = safeText
             self.searchWithLimits = false
             self.searchInGit(indexPath: IndexPath(row: 0, section: 0), searchUrlString: self.searchUrlString)
         })
@@ -116,10 +118,13 @@ class SearchViewController: UIViewController {
         }
         dialogMessage.addAction(enterToken)
         dialogMessage.addAction(useLimits)
-        self.present(dialogMessage, animated: true, completion: nil)
+        DispatchQueue.main.async(execute: {
+            self.present(dialogMessage, animated: true, completion: nil)
+        })
     }
 }
 
+// MARK: - Search manager
 extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate {
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
         if searchQuery != "" {
@@ -154,8 +159,7 @@ extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate 
             session = URLSession(configuration: conf)
         }
         let task = session.dataTask(with: url) { data, response, error in
-            if let httpResponse = response as? HTTPURLResponse {
-                print(httpResponse.statusCode)
+            if  let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 403 {
                     DispatchQueue.main.async {
                         self.askForToken(titleAlert: "You have reached the API limits", messageAlert: "Please provide a valid GitHub personal access token")
@@ -177,7 +181,7 @@ extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate 
             do {
                 let decoder = JSONDecoder()
                 guard let safeData = data else { return }
-                let json = try decoder.decode(Root.self, from: safeData)
+                let json = try decoder.decode(SearchRepos.self, from: safeData)
                 for item in json.items {
                     guard let repoOwnerAvatarUrl = URL(string: item.owner.avatar_url) else { return }
                     if let imageData = try? Data(contentsOf: repoOwnerAvatarUrl) {
@@ -212,6 +216,7 @@ extension SearchViewController: UISearchControllerDelegate, UISearchBarDelegate 
     }
 }
 
+// MARK: - TableView delegate
 extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if repos.isEmpty {
@@ -236,8 +241,6 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let navController = self.navigationController else { return }
         if !(navController.viewControllers.contains(self.repoVC)) {
-            self.repoVC.repoDetails.removeAll()
-            self.repoVC.commitDetails.removeAll()
             self.repoVC.repoDetails.append(Repo(repoName: self.repos[indexPath.row].repoName, repoStars: self.repos[indexPath.row].repoStars, repoOwner: self.repos[indexPath.row].repoOwner, repoOwnerAvatar: self.repos[indexPath.row].repoOwnerAvatar, repoUrl: self.repos[indexPath.row].repoUrl))
             self.navigationController?.pushViewController(self.repoVC, animated:true)
         }
@@ -278,6 +281,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
+// MARK: - Create spiner footer(activity indicator)
 extension UIViewController {
     func spinerFooter() -> UIView {
         let footerView = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: 100))
@@ -289,6 +293,7 @@ extension UIViewController {
     }
 }
 
+// MARK: - Check if indexPath exist
 extension UITableView {
     func indexPathExists(indexPath:IndexPath) -> Bool {
         if indexPath.section >= self.numberOfSections {

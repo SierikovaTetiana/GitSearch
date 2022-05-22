@@ -9,28 +9,16 @@ import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
+    private let appCoordinator = AppCoordinator()
     var window: UIWindow?
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
-        let navigationCotnroller = UINavigationController(rootViewController: SearchViewController())
-        navigationBarConfiguration(navigationCotnroller)
-        window?.rootViewController = navigationCotnroller
+        window?.rootViewController = appCoordinator.rootViewController
         window?.makeKeyAndVisible()
         window?.overrideUserInterfaceStyle = .light
-    }
-    
-    private func navigationBarConfiguration (_ controller: UINavigationController) {
-        let navBarAppearance = UINavigationBarAppearance()
-        controller.navigationBar.prefersLargeTitles = true
-        controller.navigationBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.black]
-        controller.navigationBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.black]
-        controller.navigationBar.tintColor = .black
-        navBarAppearance.backgroundColor = .white
-        navBarAppearance.shadowImage = nil
-        navBarAppearance.shadowColor = .none
-        UINavigationBar.appearance().compactAppearance = navBarAppearance
+        appCoordinator.start()
     }
     
     func sceneDidDisconnect(_ scene: UIScene) {
